@@ -43,15 +43,13 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
  
     def do_GET(self):
         """Serve a GET request."""
-        f = self.send_head()
-        if f:
+        if f := self.send_head():
             self.copyfile(f, self.wfile)
             f.close()
  
     def do_HEAD(self):
         """Serve a HEAD request."""
-        f = self.send_head()
-        if f:
+        if f := self.send_head():
             f.close()
  
     def do_POST(self):
@@ -90,7 +88,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         remainbytes = int(self.headers['content-length'])
         line = self.rfile.readline()
         remainbytes -= len(line)
-        if not boundary in line:
+        if boundary not in line:
             return (False, "Content NOT begin with boundary")
         line = self.rfile.readline()
         remainbytes -= len(line)
@@ -107,16 +105,16 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             out = open(fn, 'wb')
         except IOError:
             return (False, "Can't create file to write, do you have permission to write?")
-                
+
         preline = self.rfile.readline()
         remainbytes -= len(preline)
         while remainbytes > 0:
             line = self.rfile.readline()
             remainbytes -= len(line)
             if boundary in line:
-                preline = preline[0:-1]
+                preline = preline[:-1]
                 if preline.endswith(b'\r'):
-                    preline = preline[0:-1]
+                    preline = preline[:-1]
                 out.write(preline)
                 out.close()
                 return (True, "File '%s' upload success!" % fn)
@@ -142,7 +140,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             if not self.path.endswith('/'):
                 # redirect browser - doing basically what apache does
                 self.send_response(301)
-                self.send_header("Location", self.path + "/")
+                self.send_header("Location", f"{self.path}/")
                 self.end_headers()
                 return None
             for index in "index.html", "index.htm":
@@ -198,11 +196,11 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             displayname = linkname = name
             # Append / for directories or @ for symbolic links
             if os.path.isdir(fullname):
-                displayname = name + "/"
-                linkname = name + "/"
+                displayname = f"{name}/"
+                linkname = f"{name}/"
             if os.path.islink(fullname):
-                displayname = name + "@"
-                # Note: a link to a directory displays with @ and links with /
+                displayname = f"{name}@"
+                        # Note: a link to a directory displays with @ and links with /
             f.write(('<li><a href="%s">%s</a>\n'
                     % (urllib.parse.quote(linkname), html.escape(displayname))).encode())
         f.write(b"</ul>\n<hr>\n</body>\n</html>\n")
@@ -266,7 +264,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         slow) to look inside the data to make a better guess.
 
         """
- 
+
         base, ext = posixpath.splitext(path)
         if ext in self.extensions_map:
             return self.extensions_map[ext]
